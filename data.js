@@ -427,7 +427,10 @@ sudo apt-get install -y php8.5-fpm php8.5-cli php8.5-mysql \\
 # CLI'yi 8.5'e geçir (Homestead yardımcı komutu)
 php85     # yoksa: sudo update-alternatives --set php /usr/bin/php8.5
 
-php -v    # çıktıda 8.5 görmelisin` },
+php -v    # çıktıda 8.5 görmelisin
+
+# Composer'ı yeni PHP sürümüne göre güncelle
+composer self-update` },
         { lang:"bash", fn:"FPM'i doğrula", src:
 `# 8.5 FPM servisi çalışıyor mu?
 sudo systemctl status php8.5-fpm
@@ -439,6 +442,7 @@ ls /run/php/php8.5-fpm.sock` }
         "<code>vagrant ssh</code> ile makineye gir, <code>php -v</code> ile mevcut sürümü gör.",
         "8.5 değilse apt ile kur: fpm, cli, mysql, mbstring, xml, curl, zip paketleri.",
         "CLI'yi 8.5'e geçir (<code>php85</code> ya da <code>update-alternatives</code>), <code>php -v</code> ile doğrula.",
+        "PHP sürümünü değiştirdikten sonra <code>composer self-update</code> çalıştır — Composer'ın yeni sürümle uyumlu olduğundan emin ol.",
         "<code>php8.5-fpm</code> servisinin çalıştığını ve socket'in <code>/run/php/php8.5-fpm.sock</code>'ta olduğunu kontrol et.",
         "Site config'indeki <code>fastcgi_pass</code>'in bu socket'e işaret ettiğinden emin ol (bir sonraki konu)."
       ],
