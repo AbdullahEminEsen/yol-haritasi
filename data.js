@@ -53,36 +53,36 @@ grep "SQLSTATE" storage/logs/laravel.log` }
       id: "git",
       eyebrow: "Faz 0 · Temeller",
       title: "Git & GitHub akışı",
-      why: "Ekipçe aynı kod üzerinde çalışıyoruz. Git'siz kod paylaşmak mümkün değil. Yanlış kullanınca da başkasının işini bozarsın — o yüzden akışı baştan doğru öğren.",
+      why: "Kodunun geçmişini tutmak, güvenle deneyip geri alabilmek ve ileride ekip halinde çalışabilmek için Git şart. Kendi projelerinde baştan doğru alışkanlık kurarsan, ekip çalışmasına da hazır olursun.",
       body: `
-        <p><strong>Git</strong> kodun geçmişini tutar; kim ne zaman neyi değiştirdi hepsi kayıtlıdır. <strong>GitHub</strong> ise bu geçmişin ekipçe paylaşıldığı yerdir. Bizde her iş bir <em>branch</em>'te yapılır, sonra <em>Pull Request</em> ile ekibe sunulur.</p>
+        <p><strong>Git</strong> kodun geçmişini tutar; ne zaman neyi değiştirdiğin hepsi kayıtlıdır, istediğin ana geri dönebilirsin. <strong>GitHub</strong> ise bu geçmişi çevrimiçi sakladığın ve paylaştığın yerdir. Profesyonel projelerde her iş bir <em>branch</em>'te yapılır, sonra <em>Pull Request (PR)</em> ile birleştirilir. Sen de kendi projelerinde bu akışı kurarsan hem kaosa düşmezsin hem de ekip çalışmasına hazır olursun.</p>
         <h3>Günlük döngü</h3>
         <ul>
           <li>Yeni bir iş → yeni bir branch aç (asla doğrudan <code>main</code>'e yazma)</li>
           <li>Küçük ve anlamlı commit'ler at (dev bir commit yerine 5 küçük commit)</li>
           <li>İşin bitince <code>push</code> et ve Pull Request aç</li>
-          <li>Review'dan geçince merge edilir</li>
+          <li>Kendin gözden geçir (ya da bir arkadaşına baktır), sonra merge et</li>
         </ul>
-        <p>Commit mesajı yazarken "değişiklikler" gibi anlamsız mesajlar yazma; ne yaptığını yaz: <code>fix: tarih filtresi boşken çöken raporu düzelt</code>.</p>`,
+        <p>Commit mesajı yazarken "değişiklikler" gibi anlamsız mesajlar yazma; ne yaptığını yaz: <code>fix: boş tarihte çöken filtreyi düzelt</code>.</p>`,
       code: [
         { lang:"bash", fn:"git akışı", src:
 `# Güncel main'i çek ve yeni branch aç
 git checkout main
 git pull
-git checkout -b feature/rapor-tarih-filtresi
+git checkout -b feature/giris-sayfasi
 
 # Değişiklikleri gör, ekle, commit'le
 git status
 git add .
-git commit -m "feat: rapora tarih aralığı filtresi ekle"
+git commit -m "feat: giriş sayfası formunu ekle"
 
 # Uzağa gönder ve PR aç
-git push -u origin feature/rapor-tarih-filtresi` }
+git push -u origin feature/giris-sayfasi` }
       ],
       steps: [
-        "GitHub hesabınla ekip reposuna erişimini al (yöneticine sor).",
-        "Repoyu klonla: <code>git clone &lt;repo-url&gt;</code>.",
-        "Küçük bir branch aç, bir dosyada ufak değişiklik yap, commit'le ve push'la — sonra GitHub'da PR açmayı dene."
+        "GitHub'da kendine ücretsiz bir hesap aç (yoksa).",
+        "Boş bir klasörde <code>git init</code> yap, bir dosya ekle ve commit'le; sonra GitHub'da yeni bir repo açıp <code>git remote add origin &lt;repo-url&gt;</code> ile bağlayıp push'la.",
+        "Küçük bir branch aç, bir değişiklik yap, commit + push; ardından GitHub'da kendi PR'ını açmayı dene."
       ],
       resources: [
         { t:"İnteraktif", label:"Learn Git Branching (görsel, oyunlaştırılmış)", url:"https://learngitbranching.js.org/?locale=tr_TR" },
@@ -107,7 +107,7 @@ git push -u origin feature/rapor-tarih-filtresi` }
       code: [
         { lang:"bash", fn:"bir HTTP isteği", src:
 `GET /raporlar?tarih=2026-01 HTTP/1.1
-Host: havaist.local
+Host: blog.local
 Accept: text/html
 
 # Sunucunun cevabı:
@@ -257,7 +257,7 @@ class Admin extends Kullanici {
     }
 }
 
-$a = new Admin('Emin', 'emin@z3.com');
+$a = new Admin('Deniz', 'deniz@example.com');
 echo $a->yetkiVer();` }
       ],
       steps: [
@@ -377,7 +377,7 @@ vagrant halt` }
       code: [
         { lang:"bash", fn:"homestead kurulum", src:
 `# Projenin duracağı klasöre gir (yoksa oluştur)
-cd ~/code/havaist
+cd ~/code/blog
 
 # Homestead box'ını 14.0.2'ye pinleyerek Vagrantfile üret
 vagrant init laravel/homestead --box-version 14.0.2
@@ -391,7 +391,7 @@ php -v` }
       ],
       steps: [
         "VirtualBox ve Vagrant'ın kurulu olduğundan emin ol (önceki konu).",
-        "Projenin duracağı klasöre gir: <code>cd ~/code/havaist</code>.",
+        "Projenin duracağı klasöre gir: <code>cd ~/code/blog</code>.",
         "<code>vagrant init laravel/homestead --box-version 14.0.2</code> çalıştır; klasörde bir <code>Vagrantfile</code> oluştuğunu gör.",
         "<code>vagrant up</code> ile makineyi ayağa kaldır (box ilk sefer indirilir, sabret).",
         "<code>vagrant ssh</code> ile bağlan ve <code>php -v</code> ile ortamın hazır olduğunu doğrula."
@@ -411,7 +411,7 @@ php -v` }
         <h3>1. Makine içinde: nginx sites-enabled</h3>
         <p><code>vagrant ssh</code> ile makineye girip <code>/etc/nginx/sites-enabled/</code> altındaki server bloğunu düzenlersin (ya da yeni bir tane oluşturursun). İki kritik satır var: <code>server_name</code> — hangi alan adına cevap vereceği; ve <code>root</code> — projenin <code>public</code> klasörü.</p>
         <h3>2. Bilgisayarında: hosts dosyası</h3>
-        <p>Tarayıcının bu alan adını makineye yönlendirmesi için host makinenin <code>hosts</code> dosyasına bir satır eklersin. Biz <code>xip.io</code> biçiminde adlar kullanıyoruz: <code>test.127.0.0.1.xip.io</code> gibi. Bu isimlendirme, alt-alan adı konforu sağlayan eski bir kalıptır; <code>hosts</code>'a sabitlediğimiz için de dış bir servise ihtiyaç kalmaz, isim doğrudan <code>127.0.0.1</code>'e çözülür.</p>
+        <p>Tarayıcının bu alan adını makineye yönlendirmesi için host makinenin <code>hosts</code> dosyasına bir satır eklersin. Biz <code>xip.io</code> biçiminde adlar kullanıyoruz: <code>blog.127.0.0.1.xip.io</code> gibi. Bu isimlendirme, alt-alan adı konforu sağlayan eski bir kalıptır; <code>hosts</code>'a sabitlediğimiz için de dış bir servise ihtiyaç kalmaz, isim doğrudan <code>127.0.0.1</code>'e çözülür.</p>
         <p><strong>Değişiklikten sonra:</strong> nginx config'ini her düzenlediğinde makine içinde önce <code>sudo nginx -t</code> ile doğrula (hata varsa satırını söyler), sonra <code>sudo systemctl reload nginx</code> ile yeniden yükle. Aksi halde nginx eski hâliyle çalışmaya devam eder.</p>`,
       code: [
         { lang:"bash", fn:"makine içinde site config'ini aç", src:
@@ -419,12 +419,12 @@ php -v` }
 vagrant ssh
 
 # Projeye ait server bloğunu düzenle (yoksa oluştur)
-sudo nano /etc/nginx/sites-enabled/havaist` },
-        { lang:"nginx", fn:"/etc/nginx/sites-enabled/havaist", src:
+sudo nano /etc/nginx/sites-enabled/blog` },
+        { lang:"nginx", fn:"/etc/nginx/sites-enabled/blog", src:
 `server {
     listen 80;
-    server_name test.127.0.0.1.xip.io;
-    root /home/vagrant/code/havaist/public;   # projenin public'i
+    server_name blog.127.0.0.1.xip.io;
+    root /home/vagrant/code/blog/public;   # projenin public'i
 
     index index.php index.html;
 
@@ -448,13 +448,13 @@ sudo systemctl reload nginx      # değişikliği uygula` },
 # Mac/Linux:  sudo nano /etc/hosts
 # Windows:    C:\\Windows\\System32\\drivers\\etc\\hosts
 
-127.0.0.1   test.127.0.0.1.xip.io` }
+127.0.0.1   blog.127.0.0.1.xip.io` }
       ],
       steps: [
         "Box çalışırken <code>vagrant ssh</code> ile makineye gir.",
         "<code>/etc/nginx/sites-enabled/</code> altında server bloğunu düzenle: <code>server_name</code>'i alan adına, <code>root</code>'u projenin <code>public</code> klasörüne ayarla.",
         "<code>sudo nginx -t</code> ile doğrula, ardından <code>sudo systemctl reload nginx</code> ile yeniden yükle.",
-        "Bilgisayarının <code>hosts</code> dosyasına <code>127.0.0.1&nbsp;&nbsp;test.127.0.0.1.xip.io</code> satırını ekle.",
+        "Bilgisayarının <code>hosts</code> dosyasına <code>127.0.0.1&nbsp;&nbsp;blog.127.0.0.1.xip.io</code> satırını ekle.",
         "Tarayıcıda alan adını aç; Laravel'in geldiğini gör. Gelmezse önce makine içinde <code>error.log</code>'a bak."
       ],
       resources: [
@@ -471,7 +471,7 @@ sudo systemctl reload nginx      # değişikliği uygula` },
         <p><strong>nginx</strong> bir <em>web sunucusudur</em>. Görevi basit ama kritik: tarayıcıdan gelen isteği karşılamak ve onu doğru yere yönlendirmek. Statik dosyaysa (resim, CSS) doğrudan verir; PHP gerektiren bir istekse PHP-FPM'e iletir, cevabı alıp tarayıcıya döner.</p>
         <h3>İsteğin akışı</h3>
         <ul>
-          <li>Tarayıcı <code>test.127.0.0.1.xip.io</code>'ya istek atar (hosts bunu makineye yönlendirir)</li>
+          <li>Tarayıcı <code>blog.127.0.0.1.xip.io</code>'ya istek atar (hosts bunu makineye yönlendirir)</li>
           <li>nginx, <code>server_name</code>'i eşleşen server bloğunu bulur</li>
           <li>İsteği o bloğun <code>root</code>'undaki <code>index.php</code>'ye yönlendirir ve PHP-FPM'e iletir</li>
           <li>Laravel devreye girer, cevabı üretir</li>
@@ -1304,7 +1304,7 @@ Log::error('Beklenmeyen durum', ['veri' => $veri]);` }
       id: "kod-standardi",
       eyebrow: "Faz 6 · Profesyonelleşme",
       title: "Kod standartları & Git workflow",
-      why: "Tek başına yazdığın kod ile ekipte yazdığın kod farklıdır. Ortak standartlar ve düzgün bir Git akışı olmadan ekip birbirini yavaşlatır. Buraya geldiysen artık ekibin bir parçasısın.",
+      why: "Tek başına yazdığın kod ile ekipte yazdığın kod farklıdır. Ortak standartlar ve düzgün bir Git akışı olmadan ekip birbirini yavaşlatır. Buraya geldiysen artık gerçek ekip çalışmasına hazırsın.",
       body: `
         <p>Profesyonel geliştirme, "çalışan kod"un ötesinde "başkasının okuyup sürdürebileceği kod" demektir.</p>
         <h3>Kod standardı</h3>
@@ -1338,7 +1338,7 @@ git push -u origin feature/yeni-is     # gönder → GitHub'da PR aç` }
       steps: [
         "<code>./vendor/bin/pint --test</code> çalıştır ve stil önerilerini gör.",
         "Küçük bir değişikliği branch → commit → push → PR akışıyla tamamla.",
-        "Bir ekip arkadaşının PR'ına göz atıp nasıl review yapıldığını gözlemle."
+        "Açık kaynak bir projede bir Pull Request'i inceleyip review yorumlarının nasıl yazıldığını gözlemle."
       ],
       resources: [
         { t:"Standart", label:"PSR-12 — kod stili standardı", url:"https://www.php-fig.org/psr/psr-12/" },
