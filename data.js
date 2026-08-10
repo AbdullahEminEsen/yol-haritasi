@@ -64,7 +64,16 @@ grep "SQLSTATE" storage/logs/laravel.log` }
           <li>İşin bitince <code>push</code> et ve Pull Request aç</li>
           <li>Kendin gözden geçir (ya da bir arkadaşına baktır), sonra merge et</li>
         </ul>
-        <p>Commit mesajı yazarken "değişiklikler" gibi anlamsız mesajlar yazma; ne yaptığını yaz: <code>fix: boş tarihte çöken filtreyi düzelt</code>.</p>`,
+        <p>Commit mesajı yazarken "değişiklikler" gibi anlamsız mesajlar yazma; ne yaptığını yaz: <code>fix: boş tarihte çöken filtreyi düzelt</code>.</p>
+        <h3>Neyi commit'leme</h3>
+        <p>Her dosya git'e girmez. Bazıları <strong>gizli</strong> (şifre içerir), bazıları <strong>gereksiz</strong> (tek komutla yeniden üretilir ve çok yer kaplar). Bunlar <code>.gitignore</code> dosyasına yazılır; Laravel projesi bunların çoğuyla zaten hazır gelir.</p>
+        <ul>
+          <li><code>.env</code> — <strong>asla commit'leme.</strong> Veritabanı şifresi, API anahtarları burada. Git'e girerse herkes görür.</li>
+          <li><code>vendor/</code> — Composer paketleri; <code>composer install</code> ile geri gelir.</li>
+          <li><code>node_modules/</code> — npm paketleri; <code>npm install</code> ile geri gelir.</li>
+          <li><code>storage/logs/</code>, derlenmiş asset'ler, <code>.DS_Store</code> gibi geçici dosyalar.</li>
+        </ul>
+        <p><strong>İlk kuralın:</strong> <code>git add .</code>'dan önce <code>git status</code> ile ne eklediğine bak. Yanlışlıkla <code>.env</code>'i commit'lediysen aşağıdaki komutla git'ten çıkar (dosya diskte kalır).</p>`,
       code: [
         { lang:"bash", fn:"git akışı", src:
 `# Güncel main'i çek ve yeni branch aç
@@ -78,12 +87,24 @@ git add .
 git commit -m "feat: giriş sayfası formunu ekle"
 
 # Uzağa gönder ve PR aç
-git push -u origin feature/giris-sayfasi` }
+git push -u origin feature/giris-sayfasi` },
+        { lang:"bash", fn:".gitignore (tipik satırlar)", src:
+`/vendor
+/node_modules
+.env
+/storage/*.key
+/public/build
+.DS_Store` },
+        { lang:"bash", fn:"yanlışlıkla eklediysen geri al", src:
+`# .env'i git takibinden çıkar (dosya diskte kalır)
+git rm --cached .env
+git commit -m "chore: .env'i takipten çıkar"` }
       ],
       steps: [
         "GitHub'da kendine ücretsiz bir hesap aç (yoksa).",
         "Boş bir klasörde <code>git init</code> yap, bir dosya ekle ve commit'le; sonra GitHub'da yeni bir repo açıp <code>git remote add origin &lt;repo-url&gt;</code> ile bağlayıp push'la.",
-        "Küçük bir branch aç, bir değişiklik yap, commit + push; ardından GitHub'da kendi PR'ını açmayı dene."
+        "Küçük bir branch aç, bir değişiklik yap, commit + push; ardından GitHub'da kendi PR'ını açmayı dene.",
+        "<code>git add .</code>'dan önce her zaman <code>git status</code> ile ne eklediğini kontrol et — <code>.env</code> asla girmesin."
       ],
       resources: [
         { t:"İnteraktif", label:"Learn Git Branching (görsel, oyunlaştırılmış)", url:"https://learngitbranching.js.org/?locale=tr_TR" },

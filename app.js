@@ -159,6 +159,19 @@ function resetProgress() {
 /* ---- HERO (giriş) ---- */
 function renderHero() {
   const phaseCount = ROADMAP.length;
+
+  // ilerlemeye göre akıllı buton
+  const firstUndone = FLAT.find(t => !done.has(t.id));
+  let btn;
+  if (done.size === 0) {
+    btn = `<a class="start-btn" href="#${FLAT[0].id}">Başla → ${FLAT[0].title}</a>`;
+  } else if (firstUndone) {
+    btn = `<a class="start-btn" href="#${firstUndone.id}">Kaldığın yerden devam et → ${firstUndone.title}</a>
+           <a class="restart-link" href="#${FLAT[0].id}">baştan başla</a>`;
+  } else {
+    btn = `<a class="start-btn" href="#${FLAT[0].id}">Tümünü bitirdin 🎉 → baştan göz at</a>`;
+  }
+
   return `
   <div class="hero">
     <div class="eyebrow">Onboarding · v1</div>
@@ -184,7 +197,7 @@ function renderHero() {
       ilerlemen tarayıcında saklanır. Sıra önerilen yoldur ama takıldığın yeri atlayıp geri dönebilirsin.
     </div>
 
-    <a class="start-btn" href="#${FLAT[0].id}">Başla → ${FLAT[0].title}</a>
+    <div class="hero-cta">${btn}</div>
 
     <p style="margin-top:34px;color:var(--muted);font-size:13px;font-family:var(--mono)">
       Takıldığında sormaktan çekinme. Bir şeyi bilmemek ayıp değil; iki gün tek başına savaşmak öyle.
