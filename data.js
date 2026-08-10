@@ -1042,7 +1042,7 @@ foreach ($user->raporlar as $rapor) {
         <p><strong>Factory</strong>, bir model için sahte (ama gerçekçi) veri üreten kalıptır. <strong>Seeder</strong> ise bu kalıpları kullanarak veritabanını doldurur.</p>
         <h3>Ne işe yarar?</h3>
         <ul>
-          <li>Yeni bir ekran yaparken elle veri girmek yerine tek komutla 50 kayıt üret</li>
+          <li>Yeni bir sayfa ya da özellik geliştirirken elle veri girmek yerine tek komutla 50 kayıt üret</li>
           <li>Ekip arkadaşların da aynı örnek veriyle çalışsın</li>
           <li>Testlerde kullanılır</li>
         </ul>
@@ -1138,29 +1138,68 @@ $sonuclar = DB::table('raporlar')
       title: "Form işleme & validation",
       why: "Kullanıcıdan veri alırken 'boş mu, doğru formatta mı?' kontrolü şart. Validation olmadan kötü veri veritabanına girer, uygulama çöker. Her formda karşına çıkacak.",
       body: `
-        <p>Kullanıcı bir form gönderdiğinde, veriyi kaydetmeden önce doğrulaman gerekir: zorunlu alanlar dolu mu, email geçerli mi, sayı gerçekten sayı mı? Laravel bunu tek satırda halleder.</p>
-        <h3>Nasıl çalışır?</h3>
+        <p>Kullanıcı bir form gönderdiğinde, veriyi kaydetmeden önce doğrulaman gerekir: zorunlu alanlar dolu mu, email geçerli mi, sayı gerçekten sayı mı? Laravel bunu <strong>Form Request</strong> sınıflarıyla, controller'ı şişirmeden yapar.</p>
+        <h3>Neden Form Request?</h3>
+        <p>Kuralları controller içine yazarsan controller zamanla kalabalıklaşır ve aynı kuralları hem create hem update'te tekrarlarsın. Bunun yerine her işlem için ayrı bir request sınıfı üretiriz:</p>
         <ul>
-          <li><code>$request-&gt;validate([...])</code> kurallarını yazarsın</li>
-          <li>Kurallar sağlanmazsa Laravel otomatik geri yönlendirir ve hataları view'e taşır</li>
-          <li>Blade'de <code>@error('alan')</code> ile hata mesajını gösterirsin</li>
+          <li><code>Store{Model}Request</code> — <strong>oluşturma</strong> (create) kuralları</li>
+          <li><code>Update{Model}Request</code> — <strong>güncelleme</strong> (update) kuralları</li>
         </ul>
-        <p>Karmaşık formlar için <strong>Form Request</strong> sınıfı kullanılır — doğrulama kurallarını controller'dan ayrı, temiz bir sınıfta toplar. Bizim projelerde bunu sık görürsün.</p>`,
+        <p>Kurallar <code>rules()</code> metodunda durur. Controller metodunda <code>Request</code> yerine bu sınıfı type-hint edersin; Laravel isteği <em>otomatik</em> doğrular, kural sağlanmazsa istek daha controller'a girmeden geri döner. Doğrulanmış temiz veriye <code>$request-&gt;validated()</code> ile ulaşırsın.</p>
+        <p><code>authorize()</code> metodu "bu kullanıcı bu isteği yapabilir mi?" sorusunu yanıtlar; şimdilik <code>return true;</code> yeterli. Blade tarafında hataları <code>@error('alan')</code> ile gösterir, formu <code>old()</code> ile dolu tutarsın.</p>`,
       code: [
-        { lang:"php", fn:"controller içinde validation", src:
+        { lang:"bash", fn:"request sınıflarını üret", src:
+`# create ve update için ayrı request sınıfları
+php artisan make:request StoreRaporRequest
+php artisan make:request UpdateRaporRequest` },
+        { lang:"php", fn:"app/Http/Requests/StoreRaporRequest.php", src:
 `<?php
-public function kaydet(Request $request)
+namespace App\\Http\\Requests;
+
+use Illuminate\\Foundation\\Http\\FormRequest;
+
+class StoreRaporRequest extends FormRequest
 {
-    $veri = $request->validate([
-        'baslik'  => 'required|string|max:255',
-        'email'   => 'required|email',
-        'onayli'  => 'boolean',
-    ]);
+    public function authorize(): bool
+    {
+        return true; // yetki mantığı buraya (şimdilik açık)
+    }
 
-    Rapor::create($veri);
+    public function rules(): array
+    {
+        return [
+            'baslik' => 'required|string|max:255',
+            'email'  => 'required|email',
+            'onayli' => 'boolean',
+        ];
+    }
+}` },
+        { lang:"php", fn:"RaporController.php", src:
+`<?php
+namespace App\\Http\\Controllers;
 
-    return redirect()->route('rapor.index')
-        ->with('mesaj', 'Kaydedildi.');
+use App\\Http\\Requests\\StoreRaporRequest;
+use App\\Http\\Requests\\UpdateRaporRequest;
+use App\\Models\\Rapor;
+
+class RaporController extends Controller
+{
+    public function store(StoreRaporRequest $request)
+    {
+        // istek zaten doğrulandı; sadece temiz veriyi al
+        Rapor::create($request->validated());
+
+        return redirect()->route('rapor.index')
+            ->with('mesaj', 'Kaydedildi.');
+    }
+
+    public function update(UpdateRaporRequest $request, Rapor $rapor)
+    {
+        $rapor->update($request->validated());
+
+        return redirect()->route('rapor.index')
+            ->with('mesaj', 'Güncellendi.');
+    }
 }` },
         { lang:"html", fn:"blade'de hata gösterimi", src:
 `<input type="text" name="baslik" value="{{ old('baslik') }}">
@@ -1170,12 +1209,13 @@ public function kaydet(Request $request)
 @enderror` }
       ],
       steps: [
-        "Bir form oluştur ve controller'da <code>validate()</code> kuralları yaz.",
-        "Kuralı bilerek ihlal et ve otomatik geri yönlendirmeyi + hata mesajını gör.",
-        "<code>old()</code> yardımcısıyla hatalı gönderim sonrası formu doldurulmuş halde tut."
+        "<code>php artisan make:request StoreRaporRequest</code> ve <code>UpdateRaporRequest</code> ile iki request sınıfı üret.",
+        "Kuralları <code>rules()</code> içine yaz; <code>authorize()</code>'ı şimdilik <code>return true;</code> bırak.",
+        "Controller'da <code>Request</code> yerine bu sınıfları type-hint et; veriye <code>$request-&gt;validated()</code> ile ulaş.",
+        "Kuralı bilerek ihlal et; isteğin controller'a hiç girmeden geri döndüğünü ve <code>@error</code> + <code>old()</code> ile formun korunduğunu gör."
       ],
       resources: [
-        { t:"Doküman", label:"Laravel — Validation", url:"https://laravel.com/docs/validation" },
+        { t:"Doküman", label:"Laravel — Form Request Validation", url:"https://laravel.com/docs/validation#form-request-validation" },
         { t:"Referans", label:"Kullanılabilir tüm validation kuralları", url:"https://laravel.com/docs/validation#available-validation-rules" }
       ]
     },
