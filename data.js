@@ -402,6 +402,52 @@ php -v` }
       ]
     },
     {
+      id: "php-surumu",
+      eyebrow: "Faz 2 · Local Ortam",
+      title: "PHP 8.5'i kurma ve seçme",
+      why: "Projelerimizi PHP 8.5 ile çalıştırıyoruz. Box birden fazla PHP sürümü barındırabilir; doğru sürümü hem komut satırında (CLI) hem de nginx'in kullandığı FPM'de aktif etmen gerekir. Yanlış sürüm 'bu fonksiyon yok' gibi tuhaf hatalara yol açar.",
+      body: `
+        <p>Homestead box'ı içinde birden çok PHP sürümü bir arada bulunabilir; hangisini kullanacağını sen seçersin. İki yer önemli:</p>
+        <ul>
+          <li><strong>CLI</strong> — <code>php artisan</code>, <code>composer</code> gibi komutların kullandığı sürüm</li>
+          <li><strong>FPM</strong> — nginx'in PHP isteklerini ilettiği servis; site config'indeki <code>fastcgi_pass</code> socket'i buna işaret eder</li>
+        </ul>
+        <h3>Kurulum / aktifleştirme</h3>
+        <p>Box'ta 8.5 hazır gelmiyorsa apt ile kurarsın (Homestead'de <code>ondrej/php</code> deposu zaten ekli). Ardından CLI sürümünü Homestead'in <code>php85</code> yardımcı komutuyla ya da <code>update-alternatives</code> ile değiştirirsin.</p>
+        <p><strong>Doğrulama:</strong> <code>php -v</code> çıktısında <code>8.5</code> görmeli, ve nginx site config'inde <code>fastcgi_pass</code> <code>php8.5-fpm.sock</code>'a işaret etmelidir. İkisi uyuşmazsa site çalışır ama komut satırı farklı sürümle çalışır — kafa karıştırır.</p>`,
+      code: [
+        { lang:"bash", fn:"PHP 8.5 kur (makine içinde)", src:
+`vagrant ssh
+
+# 8.5 paketlerini kur (ondrej deposu Homestead'de hazır)
+sudo apt-get update
+sudo apt-get install -y php8.5-fpm php8.5-cli php8.5-mysql \\
+    php8.5-mbstring php8.5-xml php8.5-curl php8.5-zip
+
+# CLI'yi 8.5'e geçir (Homestead yardımcı komutu)
+php85     # yoksa: sudo update-alternatives --set php /usr/bin/php8.5
+
+php -v    # çıktıda 8.5 görmelisin` },
+        { lang:"bash", fn:"FPM'i doğrula", src:
+`# 8.5 FPM servisi çalışıyor mu?
+sudo systemctl status php8.5-fpm
+
+# nginx'in bağlanacağı socket burada olmalı
+ls /run/php/php8.5-fpm.sock` }
+      ],
+      steps: [
+        "<code>vagrant ssh</code> ile makineye gir, <code>php -v</code> ile mevcut sürümü gör.",
+        "8.5 değilse apt ile kur: fpm, cli, mysql, mbstring, xml, curl, zip paketleri.",
+        "CLI'yi 8.5'e geçir (<code>php85</code> ya da <code>update-alternatives</code>), <code>php -v</code> ile doğrula.",
+        "<code>php8.5-fpm</code> servisinin çalıştığını ve socket'in <code>/run/php/php8.5-fpm.sock</code>'ta olduğunu kontrol et.",
+        "Site config'indeki <code>fastcgi_pass</code>'in bu socket'e işaret ettiğinden emin ol (bir sonraki konu)."
+      ],
+      resources: [
+        { t:"Doküman", label:"PHP 8.5 — yenilikler / geçiş rehberi", url:"https://www.php.net/manual/en/migration85.php" },
+        { t:"Depo", label:"ondrej/php PPA — PHP paketleri", url:"https://launchpad.net/~ondrej/+archive/ubuntu/php" }
+      ]
+    },
+    {
       id: "site-eslemesi",
       eyebrow: "Faz 2 · Local Ortam",
       title: "Site tanımlama (nginx sites-enabled + hosts)",
@@ -433,8 +479,8 @@ sudo nano /etc/nginx/sites-enabled/blog` },
     }
 
     location ~ \\.php$ {
-        # PHP sürümüne göre socket yolu değişebilir (php8.2, php8.3 ...)
-        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        # Kullandığın PHP sürümüne göre socket yolu (biz 8.5 kullanıyoruz)
+        fastcgi_pass unix:/run/php/php8.5-fpm.sock;
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
@@ -726,6 +772,56 @@ Route::middleware(['auth'])->group(function () {
   num: 4, id: "veritabani", title: "Veritabanı & Eloquent",
   subtitle: "Veriyle çalışmak",
   topics: [
+    {
+      id: "veritabani-kurulum",
+      eyebrow: "Faz 4 · Veritabanı & Eloquent",
+      title: "Veritabanı bağlantısı & Navicat",
+      why: "Migration yazmadan önce Laravel'in bağlanacağı bir veritabanı ve doğru .env ayarları gerekir. Veritabanını gözle görebilmek için de bilgisayarına Navicat'in ücretsiz sürümünü (Premium Lite) kurarsın — tabloları, kayıtları ve ilişkileri görmek işini çok kolaylaştırır.",
+      body: `
+        <p>Üç adım: makinede bir veritabanı oluştur, Laravel'in <code>.env</code>'ini ayarla, ve Navicat ile host bilgisayarından bağlan.</p>
+        <h3>1. Veritabanını oluştur</h3>
+        <p>Homestead box'ında MySQL hazır gelir; varsayılan kullanıcı <code>homestead</code>, şifre <code>secret</code>. Makine içinde projen için bir veritabanı açarsın.</p>
+        <h3>2. .env ayarları</h3>
+        <p>Laravel makinenin içinde çalıştığı için MySQL'e <code>127.0.0.1:3306</code> üzerinden bağlanır. Proje kökündeki <code>.env</code>'de <code>DB_*</code> satırlarını doldurursun.</p>
+        <h3>3. Navicat ile bağlan</h3>
+        <p>Navicat host bilgisayarında çalışır ve makinedeki MySQL'e bağlanır. Homestead varsayılanında guest'in <code>3306</code> portu host'a <code>33060</code> olarak yönlendirilir. Yani Navicat'te: host <code>127.0.0.1</code>, port <code>33060</code>, kullanıcı <code>homestead</code>, şifre <code>secret</code>.</p>
+        <p><strong>Not:</strong> Bu port sizin Vagrant ağ/port-forward ayarınıza bağlı — bağlanamazsan önce forward'ı kontrol et.</p>`,
+      code: [
+        { lang:"bash", fn:"veritabanı oluştur (makine içinde)", src:
+`vagrant ssh
+
+# MySQL'e gir (kullanıcı: homestead, şifre: secret)
+mysql -u homestead -psecret
+
+# MySQL içinde:
+CREATE DATABASE blog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+SHOW DATABASES;
+EXIT;` },
+        { lang:"bash", fn:".env (proje kökü)", src:
+`DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=blog
+DB_USERNAME=homestead
+DB_PASSWORD=secret` },
+        { lang:"bash", fn:"Navicat bağlantısı (host bilgisayar)", src:
+`Host      : 127.0.0.1
+Port      : 33060        # guest 3306 -> host 33060 (Homestead varsayılanı)
+Kullanici : homestead
+Sifre     : secret` }
+      ],
+      steps: [
+        "<code>vagrant ssh</code> → <code>mysql -u homestead -psecret</code> ile gir, projen için bir veritabanı oluştur.",
+        "Proje <code>.env</code>'inde <code>DB_DATABASE</code>, <code>DB_USERNAME=homestead</code>, <code>DB_PASSWORD=secret</code> ayarla.",
+        "<code>php artisan migrate</code> ile bağlantıyı test et (migration'ları bir sonraki konu anlatır).",
+        "Navicat Premium Lite'ı (ücretsiz) kur ve host <code>127.0.0.1</code>, port <code>33060</code> ile bağlan.",
+        "Navicat'te veritabanını aç; tabloların ve kayıtların geldiğini gör."
+      ],
+      resources: [
+        { t:"İndir", label:"Navicat Premium Lite — ücretsiz sürüm", url:"https://www.navicat.com/en/download/navicat-premium-lite" },
+        { t:"Doküman", label:"Laravel — Veritabanı yapılandırması", url:"https://laravel.com/docs/database#configuration" }
+      ]
+    },
     {
       id: "migrations",
       eyebrow: "Faz 4 · Veritabanı & Eloquent",
