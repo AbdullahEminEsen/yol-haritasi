@@ -193,10 +193,34 @@ function renderHero() {
 }
 
 /* ---- bir konuyu render et ---- */
+/* ---- faz sonu checkpoint kartı (opsiyonel) ---- */
+function checkpointCard(phase) {
+  const cp = phase.checkpoint;
+  if (!cp) return "";
+  const hasUrl = cp.url && cp.url.trim();
+  return `
+    <div class="checkpoint">
+      <div class="cp-head">
+        <span class="cp-tag">Faz ${phase.num} · Checkpoint</span>
+        <span class="cp-opt">opsiyonel</span>
+      </div>
+      <div class="cp-body">
+        <b>${phase.title} — bitirdin mi?</b>
+        <p>${cp.desc}</p>
+      </div>
+      ${hasUrl
+        ? `<a class="cp-btn" href="${cp.url}" target="_blank" rel="noopener">Sonuçlarımı paylaş →</a>`
+        : `<span class="cp-btn-off">Form linki yakında eklenecek</span>`}
+    </div>`;
+}
+
 function renderTopic(t, index) {
   const prev = index > 0 ? FLAT[index - 1] : null;
   const next = index < FLAT.length - 1 ? FLAT[index + 1] : null;
   const isDone = done.has(t.id);
+  const phaseTopics = t.phase.topics;
+  const isLastInPhase = phaseTopics[phaseTopics.length - 1].id === t.id;
+  const checkpoint = isLastInPhase ? checkpointCard(t.phase) : "";
 
   const codes = (t.code || []).map(codeBlock).join("");
   const steps = (t.steps && t.steps.length)
@@ -229,6 +253,7 @@ function renderTopic(t, index) {
         <span class="chk">✓</span><span class="lbl">${isDone ? "Tamamlandı" : "Bu konuyu tamamladım"}</span>
       </button>
     </div>
+    ${checkpoint}
 
     <div class="pager">
       ${prev

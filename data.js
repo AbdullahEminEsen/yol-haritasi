@@ -9,6 +9,7 @@ const ROADMAP = [
 {
   num: 0, id: "temeller", title: "Temeller",
   subtitle: "Ortama girmeden önce",
+  checkpoint: { desc: "Terminal, Git ve HTTP alıştırmalarını yaptıysan; istersen küçük test repo&#39;nun linkini ya da bir çıktının ekran görüntüsünü paylaş.", url: "https://tally.so/r/VLaRKE" },
   topics: [
     {
       id: "terminal",
@@ -131,6 +132,7 @@ Content-Type: text/html
 {
   num: 1, id: "php", title: "PHP Temelleri",
   subtitle: "Dilin kendisi",
+  checkpoint: { desc: "PHP örneklerini (diziler, OOP, Composer) çalıştırdıysan; kısa kod parçanı ya da çıktı görüntünü paylaşabilirsin.", url: "https://tally.so/r/VLaRKE" },
   topics: [
     {
       id: "php-syntax",
@@ -319,6 +321,7 @@ class RaporServisi {
 {
   num: 2, id: "ortam", title: "Local Ortam",
   subtitle: "Bizim kurulumumuz",
+  checkpoint: { desc: "Homestead&#39;i kurup siteyi tarayıcıda açtıysan; <code>php -v</code> çıktısı ve açılan sayfanın ekran görüntüsünü paylaş.", url: "https://tally.so/r/VLaRKE" },
   topics: [
     {
       id: "vagrant-vbox",
@@ -605,6 +608,7 @@ ls /etc/nginx/sites-available/` }
 {
   num: 3, id: "laravel", title: "Laravel'e Giriş",
   subtitle: "Framework'ün temelleri",
+  checkpoint: { desc: "İlk route / controller / Blade sayfanı çalıştırdıysan; ekran görüntüsünü ya da kod linkini paylaş.", url: "https://tally.so/r/VLaRKE" },
   topics: [
     {
       id: "laravel-yapi",
@@ -818,6 +822,7 @@ Route::middleware(['auth'])->group(function () {
 {
   num: 4, id: "veritabani", title: "Veritabanı & Eloquent",
   subtitle: "Veriyle çalışmak",
+  checkpoint: { desc: "Migration&#39;ları çalıştırıp Navicat&#39;te tabloları gördüysen; Navicat ekranının ya da <code>migrate</code> çıktısının görüntüsünü paylaş.", url: "https://tally.so/r/VLaRKE" },
   topics: [
     {
       id: "veritabani-kurulum",
@@ -1131,6 +1136,7 @@ $sonuclar = DB::table('raporlar')
 {
   num: 5, id: "frontend", title: "Form, Validation & Arayüz",
   subtitle: "Kullanıcıyla buluşan taraf",
+  checkpoint: { desc: "Form + validation çalışmanı (Form Request ile) bitirdiysen; formun ve bir hata mesajının ekran görüntüsünü paylaş.", url: "https://tally.so/r/VLaRKE" },
   topics: [
     {
       id: "validation",
@@ -1355,6 +1361,7 @@ npm run build` },
 {
   num: 6, id: "profesyonel", title: "Profesyonelleşme",
   subtitle: "Ekip standardına geçiş",
+  checkpoint: { desc: "Kendi projeni GitHub&#39;a atıp bir PR açtıysan; repo ve PR linkini paylaş.", url: "https://tally.so/r/VLaRKE" },
   topics: [
     {
       id: "auth",
