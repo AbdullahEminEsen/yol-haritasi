@@ -42,6 +42,12 @@ const RULES = {
     ["string",  /'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/],
     ["key",     /^\s*-?\s*[\w.-]+(?=:)/m],
   ],
+  ruby: [
+    ["comment", /#[^\n]*/],
+    ["string",  /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/],
+    ["keyword", /\b(?:config|Vagrant|do|end|true|false|nil)\b/],
+    ["var",     /\b[a-z_]\w*:/],
+  ],
   nginx: [
     ["comment", /#[^\n]*/],
     ["var",     /\$[A-Za-z_]\w*/],

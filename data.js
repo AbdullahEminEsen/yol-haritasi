@@ -402,6 +402,49 @@ php -v` }
       ]
     },
     {
+      id: "vagrantfile-ag",
+      eyebrow: "Faz 2 · Local Ortam",
+      title: "Vagrantfile: ağ & port ayarları",
+      why: "Projeyi bilgisayarının tarayıcısından açabilmen ve veritabanına Navicat ile bağlanabilmen için makinenin portlarını host'a yönlendirmen gerekir. Bu ayarlar Vagrantfile'da yapılır; olmazsa 'siteye erişemiyorum' ya da 'Navicat bağlanmıyor' dersin.",
+      body: `
+        <p><code>vagrant init</code> sana bir <code>Vagrantfile</code> üretti. Ağ ve port ayarlarını bunun içine eklersin. En temiz akış: init'ten sonra, <code>vagrant up</code>'tan önce eklemek. Sonradan eklersen <code>vagrant reload</code> ile uygularsın.</p>
+        <h3>İki tür bağlantı</h3>
+        <ul>
+          <li><strong>private_network:</strong> Makineye sabit bir yerel IP verir (<code>192.168.33.10</code>). Makineye bu IP üzerinden de ulaşabilirsin.</li>
+          <li><strong>forwarded_port:</strong> Makinedeki bir portu bilgisayarının aynı portuna bağlar. Örneğin guest 80 → host 80 sayesinde site tarayıcıda açılır; guest 3306 → host 3306 sayesinde Navicat MySQL'e bağlanır.</li>
+        </ul>
+        <p>Bizim kullandığımız ayarlar aşağıda. <code>vbguest</code> satırları, VirtualBox Guest Additions'ın boot sırasında otomatik güncellenip makineyi takmasını engeller; <code>boot_timeout</code> ise yavaş makinelerde ilk açılışa daha uzun süre tanır.</p>`,
+      code: [
+        { lang:"ruby", fn:"Vagrantfile (ilgili satırlar)", src:
+`config.vm.network "private_network", ip: "192.168.33.10"
+
+config.vbguest.auto_update = false
+config.vbguest.no_remote = true
+
+config.vm.network "forwarded_port", guest: 80,   host: 80
+config.vm.network "forwarded_port", guest: 443,  host: 443
+config.vm.network "forwarded_port", guest: 3306, host: 3306   # MySQL -> Navicat
+config.vm.network "forwarded_port", guest: 9200, host: 9200   # Elasticsearch
+# config.vm.network "forwarded_port", guest: 8080, host: 8080, protocol: "tcp"
+
+config.vm.boot_timeout = 300` },
+        { lang:"bash", fn:"değişikliği uygula", src:
+`# Vagrantfile'ı düzenledikten sonra ayarları uygula
+vagrant reload` }
+      ],
+      steps: [
+        "<code>vagrant init</code> ile oluşan <code>Vagrantfile</code>'ı aç.",
+        "<code>private_network</code> satırıyla makineye sabit IP ver (<code>192.168.33.10</code>).",
+        "Gereken portları <code>forwarded_port</code> ile host'a yönlendir: 80, 443, 3306 (MySQL), 9200 (Elasticsearch).",
+        "Makine zaten çalışıyorsa <code>vagrant reload</code> ile ayarları uygula.",
+        "Tarayıcıda siteyi, Navicat'te <code>127.0.0.1:3306</code>'yı test et."
+      ],
+      resources: [
+        { t:"Doküman", label:"Vagrant — Forwarded Ports", url:"https://developer.hashicorp.com/vagrant/docs/networking/forwarded_ports" },
+        { t:"Doküman", label:"Vagrant — Private Networks", url:"https://developer.hashicorp.com/vagrant/docs/networking/private_network" }
+      ]
+    },
+    {
       id: "php-surumu",
       eyebrow: "Faz 2 · Local Ortam",
       title: "PHP 8.5'i kurma ve seçme",
@@ -788,7 +831,7 @@ Route::middleware(['auth'])->group(function () {
         <h3>2. .env ayarları</h3>
         <p>Laravel makinenin içinde çalıştığı için MySQL'e <code>127.0.0.1:3306</code> üzerinden bağlanır. Proje kökündeki <code>.env</code>'de <code>DB_*</code> satırlarını doldurursun.</p>
         <h3>3. Navicat ile bağlan</h3>
-        <p>Navicat host bilgisayarında çalışır ve makinedeki MySQL'e bağlanır. Homestead varsayılanında guest'in <code>3306</code> portu host'a <code>33060</code> olarak yönlendirilir. Yani Navicat'te: host <code>127.0.0.1</code>, port <code>33060</code>, kullanıcı <code>homestead</code>, şifre <code>secret</code>.</p>
+        <p>Navicat host bilgisayarında çalışır ve makinedeki MySQL'e bağlanır. Vagrantfile'da guest'in <code>3306</code> portunu host'a <code>3306</code> olarak yönlendirdiğimiz için (önceki konu), Navicat'te: host <code>127.0.0.1</code>, port <code>3306</code>, kullanıcı <code>homestead</code>, şifre <code>secret</code>. Alternatif olarak makinenin sabit IP'siyle de bağlanabilirsin: <code>192.168.33.10:3306</code>.</p>
         <p><strong>Not:</strong> Bu port sizin Vagrant ağ/port-forward ayarınıza bağlı — bağlanamazsan önce forward'ı kontrol et.</p>`,
       code: [
         { lang:"bash", fn:"veritabanı oluştur (makine içinde)", src:
@@ -810,7 +853,7 @@ DB_USERNAME=homestead
 DB_PASSWORD=secret` },
         { lang:"bash", fn:"Navicat bağlantısı (host bilgisayar)", src:
 `Host      : 127.0.0.1
-Port      : 33060        # guest 3306 -> host 33060 (Homestead varsayılanı)
+Port      : 3306         # guest 3306 -> host 3306 (Vagrantfile'da forward)
 Kullanici : homestead
 Sifre     : secret` }
       ],
@@ -818,7 +861,7 @@ Sifre     : secret` }
         "<code>vagrant ssh</code> → <code>mysql -u homestead -psecret</code> ile gir, projen için bir veritabanı oluştur.",
         "Proje <code>.env</code>'inde <code>DB_DATABASE</code>, <code>DB_USERNAME=homestead</code>, <code>DB_PASSWORD=secret</code> ayarla.",
         "<code>php artisan migrate</code> ile bağlantıyı test et (migration'ları bir sonraki konu anlatır).",
-        "Navicat Premium Lite'ı (ücretsiz) kur ve host <code>127.0.0.1</code>, port <code>33060</code> ile bağlan.",
+        "Navicat Premium Lite'ı (ücretsiz) kur ve host <code>127.0.0.1</code>, port <code>3306</code> ile bağlan.",
         "Navicat'te veritabanını aç; tabloların ve kayıtların geldiğini gör."
       ],
       resources: [
