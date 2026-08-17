@@ -1157,7 +1157,7 @@ $sonuclar = DB::table('raporlar')
 {
   num: 5, id: "frontend", title: "Form, Validation & Arayüz",
   subtitle: "Kullanıcıyla buluşan taraf",
-  checkpoint: { desc: "Form + validation çalışmanı (Form Request ile) bitirdiysen; formun ve bir hata mesajının ekran görüntüsünü paylaş.", url: "https://tally.so/r/VLaRKE" },
+  checkpoint: { desc: "CRUD uygulamanı (ekleme, listeleme, düzenleme, silme) çalışır hâlde bitirdiysen; ekran görüntüsünü ya da repo linkini paylaş.", url: "https://tally.so/r/VLaRKE" },
   topics: [
     {
       id: "validation",
@@ -1374,6 +1374,130 @@ npm run build` },
       ],
       resources: [
         { t:"Doküman", label:"Laravel — Vite ile asset derleme", url:"https://laravel.com/docs/vite" }
+      ]
+    },
+    {
+      id: "crud-uygulamasi",
+      eyebrow: "Faz 5 · Form, Validation & Arayüz",
+      title: "CRUD: hepsini bir araya getirmek",
+      why: "Şimdiye kadar öğrendiğin her şey (route, controller, Eloquent, Form Request, Blade) tek bir amaca hizmet ediyor: bir kaynağı yönetebilmek. CRUD bunun adı. Kendi projende yapacağın uygulama da baştan sona bunun üzerine kurulu olacak.",
+      body: `
+        <p><strong>CRUD</strong>, bir kaynak üzerinde yapabileceğin dört temel işlemin kısaltmasıdır: <strong>C</strong>reate (oluştur), <strong>R</strong>ead (oku/listele), <strong>U</strong>pdate (güncelle), <strong>D</strong>elete (sil). Bir görev listesi, bir blog, bir stok takibi — hepsi özünde CRUD'dur.</p>
+        <h3>Laravel'de karşılığı</h3>
+        <p>Bu dört işlem, standart olarak yedi route'a ve bir controller'daki yedi metoda karşılık gelir. Bunu tek tek yazmak yerine <code>Route::resource</code> ile tek satırda tanımlarsın:</p>
+        <table style="width:100%;border-collapse:collapse;margin:14px 0 20px;font-size:13.5px">
+          <thead><tr style="text-align:left;border-bottom:2px solid var(--line)">
+            <th style="padding:8px 10px">HTTP</th><th style="padding:8px 10px">URL</th><th style="padding:8px 10px">Metot</th><th style="padding:8px 10px">İş</th>
+          </tr></thead>
+          <tbody style="font-family:var(--mono);font-size:12.5px">
+            <tr style="border-bottom:1px solid var(--line-2)"><td style="padding:7px 10px">GET</td><td style="padding:7px 10px">/gorevler</td><td style="padding:7px 10px">index</td><td style="padding:7px 10px;font-family:var(--body)">Listele</td></tr>
+            <tr style="border-bottom:1px solid var(--line-2)"><td style="padding:7px 10px">GET</td><td style="padding:7px 10px">/gorevler/create</td><td style="padding:7px 10px">create</td><td style="padding:7px 10px;font-family:var(--body)">Oluşturma formu</td></tr>
+            <tr style="border-bottom:1px solid var(--line-2)"><td style="padding:7px 10px">POST</td><td style="padding:7px 10px">/gorevler</td><td style="padding:7px 10px">store</td><td style="padding:7px 10px;font-family:var(--body)">Kaydet</td></tr>
+            <tr style="border-bottom:1px solid var(--line-2)"><td style="padding:7px 10px">GET</td><td style="padding:7px 10px">/gorevler/{id}</td><td style="padding:7px 10px">show</td><td style="padding:7px 10px;font-family:var(--body)">Tek kaydı göster</td></tr>
+            <tr style="border-bottom:1px solid var(--line-2)"><td style="padding:7px 10px">GET</td><td style="padding:7px 10px">/gorevler/{id}/edit</td><td style="padding:7px 10px">edit</td><td style="padding:7px 10px;font-family:var(--body)">Düzenleme formu</td></tr>
+            <tr style="border-bottom:1px solid var(--line-2)"><td style="padding:7px 10px">PUT</td><td style="padding:7px 10px">/gorevler/{id}</td><td style="padding:7px 10px">update</td><td style="padding:7px 10px;font-family:var(--body)">Güncelle</td></tr>
+            <tr><td style="padding:7px 10px">DELETE</td><td style="padding:7px 10px">/gorevler/{id}</td><td style="padding:7px 10px">destroy</td><td style="padding:7px 10px;font-family:var(--body)">Sil</td></tr>
+          </tbody>
+        </table>
+        <p>Aşağıda bir <strong>Görev</strong> kaynağı için uçtan uca örnek var: migration → model → resource route → Form Request'li controller → Blade view'leri. Kendi projende de aynı iskeleti izleyip alanları kendi konuna göre değiştirebilirsin.</p>`,
+      code: [
+        { lang:"bash", fn:"tek komutla iskeleti üret", src:
+`# Model + migration + controller (resource metotlarıyla) birlikte
+php artisan make:model Gorev -mcr
+
+# Store/Update için Form Request'ler
+php artisan make:request StoreGorevRequest
+php artisan make:request UpdateGorevRequest` },
+        { lang:"php", fn:"database/migrations/..._create_gorevler_table.php", src:
+`public function up(): void {
+    Schema::create('gorevler', function (Blueprint $table) {
+        $table->id();
+        $table->string('baslik');
+        $table->boolean('tamamlandi')->default(false);
+        $table->timestamps();
+    });
+}` },
+        { lang:"php", fn:"routes/web.php", src:
+`use App\\Http\\Controllers\\GorevController;
+
+// Yukarıdaki 7 route'u tek satırda tanımlar
+Route::resource('gorevler', GorevController::class);` },
+        { lang:"php", fn:"app/Http/Controllers/GorevController.php", src:
+`<?php
+namespace App\\Http\\Controllers;
+
+use App\\Models\\Gorev;
+use App\\Http\\Requests\\StoreGorevRequest;
+use App\\Http\\Requests\\UpdateGorevRequest;
+
+class GorevController extends Controller
+{
+    public function index()
+    {
+        $gorevler = Gorev::latest()->get();
+        return view('gorevler.index', compact('gorevler'));
+    }
+
+    public function create()
+    {
+        return view('gorevler.create');
+    }
+
+    public function store(StoreGorevRequest $request)
+    {
+        Gorev::create($request->validated());
+        return redirect()->route('gorevler.index')->with('mesaj', 'Görev eklendi.');
+    }
+
+    public function edit(Gorev $gorev)
+    {
+        return view('gorevler.edit', compact('gorev'));
+    }
+
+    public function update(UpdateGorevRequest $request, Gorev $gorev)
+    {
+        $gorev->update($request->validated());
+        return redirect()->route('gorevler.index')->with('mesaj', 'Güncellendi.');
+    }
+
+    public function destroy(Gorev $gorev)
+    {
+        $gorev->delete();
+        return redirect()->route('gorevler.index')->with('mesaj', 'Silindi.');
+    }
+}` },
+        { lang:"html", fn:"resources/views/gorevler/index.blade.php", src:
+`@extends('layouts.app')
+@section('content')
+    <a href="{{ route('gorevler.create') }}" class="btn btn-primary">+ Yeni Görev</a>
+
+    <ul class="list-group mt-3">
+        @foreach ($gorevler as $gorev)
+            <li class="list-group-item d-flex justify-content-between">
+                {{ $gorev->baslik }}
+                <span>
+                    <a href="{{ route('gorevler.edit', $gorev) }}">Düzenle</a>
+                    <form action="{{ route('gorevler.destroy', $gorev) }}" method="POST" class="d-inline">
+                        @csrf @method('DELETE')
+                        <button class="btn btn-sm btn-danger">Sil</button>
+                    </form>
+                </span>
+            </li>
+        @endforeach
+    </ul>
+@endsection` }
+      ],
+      steps: [
+        "<code>php artisan make:model Gorev -mcr</code> ile model, migration ve resource controller'ı birlikte üret.",
+        "Migration'da alanları tanımla, <code>php artisan migrate</code> çalıştır.",
+        "<code>routes/web.php</code>'ye <code>Route::resource('gorevler', GorevController::class)</code> ekle; <code>php artisan route:list</code> ile 7 route'un geldiğini gör.",
+        "Controller'ın yedi metodunu doldur (index/create/store/show/edit/update/destroy) — <code>store</code> ve <code>update</code>'te Form Request kullan.",
+        "<code>index</code>, <code>create</code> ve <code>edit</code> için Blade view'leri yaz; sil butonunda <code>@method('DELETE')</code> kullanmayı unutma (HTML formu native DELETE desteklemez).",
+        "Tarayıcıda dördünü de dene: bir kayıt oluştur, listele, düzenle, sil."
+      ],
+      resources: [
+        { t:"Doküman", label:"Laravel — Resource Controllers", url:"https://laravel.com/docs/controllers#resource-controllers" },
+        { t:"Doküman", label:"Laravel — Blade @method / @csrf", url:"https://laravel.com/docs/blade#forms" }
       ]
     }
   ]
