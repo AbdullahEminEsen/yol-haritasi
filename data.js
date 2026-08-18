@@ -469,6 +469,54 @@ vagrant reload` }
       ]
     },
     {
+      id: "ssh-erisim",
+      eyebrow: "Faz 2 · Local Ortam",
+      title: "Makineye doğrudan bağlanma (KiTTY / PuTTY)",
+      why: "Her seferinde proje klasörüne gidip <code>vagrant ssh</code> yazmak yerine, kalıcı bir bağlantı kaydı tutan bir SSH istemcisiyle tek tıkla makineye girebilirsin. Özellikle Windows'ta günlük işi belirgin şekilde kolaylaştırır.",
+      body: `
+        <p><code>vagrant ssh</code> aslında arka planda normal bir SSH bağlantısı açar. Bunu bir <strong>SSH istemcisi</strong> ile doğrudan da yapabilirsin — önceki konuda <code>Vagrantfile</code>'a yazdığın <code>192.168.33.10</code> IP'sini kullanarak. Avantajı: bağlantıyı bir kere kaydedersin, sonraki seferler tek tıkla açılır; ayrıca birden fazla pencere/sekme açıp aynı anda birkaç işi takip edebilirsin.</p>
+        <h3>Windows: PuTTY / KiTTY</h3>
+        <p><strong>PuTTY</strong> klasik ve yaygın bir SSH istemcisidir. <strong>KiTTY</strong> onun üzerine sekme desteği ve oturum kaydetme gibi ek özellikler koyan bir fork'udur — günlük kullanım için KiTTY biraz daha rahat. İkisi de aynı mantıkla çalışır: host, port, kullanıcı adı gir, bağlan.</p>
+        <h3>Mac / Linux: zaten elinde</h3>
+        <p>Mac ve Linux'ta ayrı bir program kurmana gerek yok — Terminal'in kendisi bir SSH istemcisi. Tek satır <code>ssh</code> komutuyla bağlanırsın. İstersen bunu bir alias'a da bağlayabilirsin.</p>
+        <p><strong>Giriş bilgileri:</strong> Homestead box'ının varsayılan kullanıcı adı <code>vagrant</code>, şifresi de <code>vagrant</code>'tır. Box çalışıyor olmalı (<code>vagrant up</code>) — kapalıyken bağlanamazsın.</p>`,
+      code: [
+        { lang:"bash", fn:"Windows — PuTTY / KiTTY bağlantı bilgileri", src:
+`Host Name (IP)  : 192.168.33.10
+Port            : 22
+Connection type : SSH
+
+# Bağlanınca sorulacak:
+login as: vagrant
+password: vagrant
+
+# İstersen "Saved Sessions" altına bir isim verip kaydet
+# (ör. "z3-blog") — sonraki seferler çift tıkla aç.` },
+        { lang:"bash", fn:"Mac / Linux — Terminal", src:
+`ssh vagrant@192.168.33.10
+# şifre sorulunca: vagrant
+
+# Sık kullanacaksan ~/.zshrc ya da ~/.bashrc'ye kısayol ekle:
+alias blogssh="ssh vagrant@192.168.33.10"` },
+        { lang:"bash", fn:"IP ile bağlanamazsan (yedek yol)", src:
+`# Proje klasöründe çalıştır; Vagrant'ın kendi hesapladığı
+# host, port ve anahtar bilgisini gösterir
+vagrant ssh-config` }
+      ],
+      steps: [
+        "Windows kullanıyorsan KiTTY'yi (ya da PuTTY'yi) indir ve kur.",
+        "Host olarak <code>192.168.33.10</code>, port <code>22</code> gir; bağlan.",
+        "Kullanıcı adı <code>vagrant</code>, şifre <code>vagrant</code> ile giriş yap.",
+        "Mac/Linux kullanıyorsan doğrudan <code>ssh vagrant@192.168.33.10</code> dene.",
+        "Bağlantıyı bir oturum olarak kaydet (KiTTY/PuTTY'de 'Saved Sessions') — bir dahaki sefere tek tıkla aç."
+      ],
+      resources: [
+        { t:"İndir", label:"PuTTY — resmi indirme", url:"https://www.putty.org/" },
+        { t:"İndir", label:"KiTTY — PuTTY fork'u", url:"https://www.9bis.net/kitty/" },
+        { t:"Doküman", label:"Vagrant — SSH ile bağlanma", url:"https://developer.hashicorp.com/vagrant/docs/cli/ssh" }
+      ]
+    },
+    {
       id: "php-surumu",
       eyebrow: "Faz 2 · Local Ortam",
       title: "PHP 8.5'i kurma ve seçme",
