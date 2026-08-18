@@ -1793,6 +1793,65 @@ Log::error('Beklenmeyen durum', ['veri' => $veri]);` }
       ]
     },
     {
+      id: "testler",
+      eyebrow: "Faz 6 · Profesyonelleşme",
+      title: "Temel test yazımı (Pest)",
+      why: "Bir özelliğin çalıştığını her seferinde elle tıklayarak kontrol etmek yerine, bir kez yazdığın testle her seferinde otomatik kanıtlarsın. Kod değiştiğinde bir şeyi kırıp kırmadığını anında görürsün — bitirme projene de gerçek bir kalite kanıtı katar.",
+      body: `
+        <p>Bir <strong>test</strong>, kodunun beklediğin gibi davrandığını doğrulayan, kendi kendine çalışan küçük bir programdır. "Bu route 200 dönüyor mu?", "bu form gönderilince kayıt gerçekten oluşuyor mu?" gibi soruları elinle kontrol etmek yerine bir kez yazar, sonra her istediğinde tekrar çalıştırırsın.</p>
+        <h3>Pest nedir?</h3>
+        <p>Laravel'de test yazmanın modern yolu <strong>Pest</strong>'tir — kısa, okunaklı bir söz dizimiyle test yazmanı sağlar (altyapıda hâlâ PHPUnit çalışır). Yeni Laravel projelerinde çoğu zaman hazır gelir; gelmiyorsa tek komutla eklenir.</p>
+        <h3>Feature test vs Unit test</h3>
+        <ul>
+          <li><strong>Feature test:</strong> Gerçek bir HTTP isteği atar, route'tan controller'a, veritabanına kadar bütün akışı test eder. Çoğunlukla bunu yazacaksın.</li>
+          <li><strong>Unit test:</strong> Tek bir sınıfı ya da metodu, dış bağımlılıklardan izole test eder. Daha küçük ve odaklı parçalar için.</li>
+        </ul>
+        <p>Testler varsayılan olarak <strong>sqlite in-memory</strong> bir veritabanı kullanır (<code>RefreshDatabase</code> trait'i her testten önce tabloları temizler) — gerçek veritabanına dokunmaz, hızlıdır.</p>`,
+      code: [
+        { lang:"bash", fn:"Pest kurulumu (yoksa)", src:
+`composer require pestphp/pest --dev --with-all-dependencies
+php artisan pest:install` },
+        { lang:"php", fn:"tests/Feature/GorevTest.php", src:
+`<?php
+
+use App\\Models\\Gorev;
+
+it('görev listesi sayfası açılır', function () {
+    $this->get('/gorevler')->assertStatus(200);
+});
+
+it('yeni görev oluşturulabilir', function () {
+    $this->post('/gorevler', ['baslik' => 'Test görevi'])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('gorevler', ['baslik' => 'Test görevi']);
+});
+
+it('görev silinebilir', function () {
+    $gorev = Gorev::factory()->create();
+
+    $this->delete("/gorevler/{$gorev->id}")->assertRedirect();
+
+    $this->assertDatabaseMissing('gorevler', ['id' => $gorev->id]);
+});` },
+        { lang:"bash", fn:"testleri çalıştır", src:
+`php artisan test
+# ya da doğrudan
+./vendor/bin/pest` }
+      ],
+      steps: [
+        "Pest kurulu değilse <code>composer require pestphp/pest --dev --with-all-dependencies</code> + <code>php artisan pest:install</code> ile ekle.",
+        "<code>php artisan make:test GorevTest --pest</code> ile bir test dosyası oluştur.",
+        "Bir route'un <code>200</code> döndüğünü doğrulayan basit bir test yaz, <code>php artisan test</code> ile çalıştır.",
+        "CRUD projendeki oluşturma akışını test eden bir test yaz: <code>post()</code> at, <code>assertDatabaseHas()</code> ile kaydın gerçekten oluştuğunu doğrula.",
+        "Bilerek bir şeyi boz (ör. route'u sil) ve testin kırmızıya döndüğünü gör — testin gerçekten bir şey kontrol ettiğine emin ol."
+      ],
+      resources: [
+        { t:"Doküman", label:"Pest — resmi dokümantasyon", url:"https://pestphp.com/docs/installation" },
+        { t:"Doküman", label:"Laravel — Testing: Başlangıç", url:"https://laravel.com/docs/testing" }
+      ]
+    },
+    {
       id: "kod-standardi",
       eyebrow: "Faz 6 · Profesyonelleşme",
       title: "Kod standartları & Git workflow",

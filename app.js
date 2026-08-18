@@ -400,6 +400,88 @@ function route() {
 function openNav() { document.body.classList.add("nav-open"); }
 function closeNav() { document.body.classList.remove("nav-open"); }
 
+/* ---- komut paleti (Ctrl+K arama) ---- */
+let cmdkResults = [];
+let cmdkActive = 0;
+
+function openSearch() {
+  document.body.classList.add("search-open");
+  const input = document.getElementById("cmdkInput");
+  input.value = "";
+  renderSearchResults("");
+  setTimeout(() => input.focus(), 10);
+}
+function closeSearch() {
+  document.body.classList.remove("search-open");
+}
+function renderSearchResults(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    cmdkResults = FLAT;
+  } else {
+    cmdkResults = FLAT
+      .map(t => {
+        const title = t.title.toLowerCase();
+        let score = -1;
+        if (title.startsWith(q)) score = 0;
+        else if (title.includes(q)) score = 1;
+        else if (t.id.toLowerCase().includes(q)) score = 2;
+        else if (t.phase.title.toLowerCase().includes(q)) score = 3;
+        return { t, score };
+      })
+      .filter(r => r.score !== -1)
+      .sort((a, b) => a.score - b.score)
+      .map(r => r.t);
+  }
+  cmdkActive = 0;
+
+  const box = document.getElementById("cmdkResults");
+  if (!cmdkResults.length) {
+    box.innerHTML = `<div class="cmdk-empty">"${esc(query)}" için sonuç yok.</div>`;
+    return;
+  }
+  box.innerHTML = cmdkResults.slice(0, 30).map((t, i) => `
+    <a class="cmdk-item ${i === cmdkActive ? "active" : ""}" href="#${t.id}" data-i="${i}" onmousemove="setCmdkActive(${i})">
+      <span class="ci-title">${t.title}</span>
+      <span class="ci-meta">Faz ${t.phase.num} · ${t.phase.title}</span>
+    </a>`).join("");
+}
+function setCmdkActive(i) {
+  cmdkActive = i;
+  document.querySelectorAll(".cmdk-item").forEach((el, idx) => el.classList.toggle("active", idx === i));
+}
+function cmdkMove(delta) {
+  if (!cmdkResults.length) return;
+  cmdkActive = (cmdkActive + delta + cmdkResults.length) % Math.min(cmdkResults.length, 30);
+  setCmdkActive(cmdkActive);
+  document.querySelectorAll(".cmdk-item")[cmdkActive]?.scrollIntoView?.({ block: "nearest" });
+}
+function cmdkGo() {
+  const t = cmdkResults[cmdkActive];
+  if (t) { location.hash = "#" + t.id; closeSearch(); }
+}
+
+document.addEventListener("keydown", (e) => {
+  const isOpen = document.body.classList.contains("search-open");
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    isOpen ? closeSearch() : openSearch();
+    return;
+  }
+  if (!isOpen) return;
+  if (e.key === "Escape") { closeSearch(); return; }
+  if (e.key === "ArrowDown") { e.preventDefault(); cmdkMove(1); return; }
+  if (e.key === "ArrowUp") { e.preventDefault(); cmdkMove(-1); return; }
+  if (e.key === "Enter") { e.preventDefault(); cmdkGo(); return; }
+});
+document.addEventListener("input", (e) => {
+  if (e.target && e.target.id === "cmdkInput") renderSearchResults(e.target.value);
+});
+document.addEventListener("click", (e) => {
+  const item = e.target.closest(".cmdk-item");
+  if (item) { e.preventDefault(); closeSearch(); location.hash = item.getAttribute("href"); }
+});
+
 /* ---- başlat ---- */
 buildNav();
 refreshProgress();

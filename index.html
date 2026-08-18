@@ -105,6 +105,28 @@
 
   /* plan nav-linki */
   .plan-nav-link{display:flex;align-items:center;gap:10px;padding:11px 22px;margin:8px 0 2px;font-family:var(--mono);font-size:12.5px;color:#cfe0e8;text-decoration:none;border-left:2px solid transparent;border-bottom:1px solid rgba(255,255,255,.07);transition:.15s}
+
+  /* arama tetikleyici (sidebar) */
+  .search-trigger{display:flex;align-items:center;gap:9px;width:calc(100% - 44px);margin:0 22px 16px;padding:9px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:9px;color:#9fb4bf;font-family:var(--body);font-size:13px;cursor:pointer;transition:.15s}
+  .search-trigger:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18);color:#fff}
+  .st-ico{font-size:12px}
+  .st-kbd{margin-left:auto;font-family:var(--mono);font-size:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:2px 6px;border-radius:5px;color:#8ea4b0}
+
+  /* komut paleti (Ctrl+K) */
+  .cmdk-overlay{display:none;position:fixed;inset:0;background:rgba(5,20,28,.55);backdrop-filter:blur(2px);z-index:100;align-items:flex-start;justify-content:center;padding-top:12vh}
+  body.search-open .cmdk-overlay{display:flex}
+  .cmdk-panel{width:100%;max-width:560px;max-height:64vh;background:var(--card);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column;margin:0 16px}
+  .cmdk-input-wrap{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .cmdk-ico{font-size:14px;opacity:.6}
+  .cmdk-input{flex:1;border:none;outline:none;font-family:var(--body);font-size:15px;color:var(--text);background:transparent}
+  .cmdk-esc{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--line-2);border:1px solid var(--line);padding:3px 7px;border-radius:5px}
+  .cmdk-results{overflow-y:auto;padding:8px}
+  .cmdk-item{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:9px;cursor:pointer;text-decoration:none;color:var(--text)}
+  .cmdk-item .ci-title{font-size:14px;font-weight:500;color:var(--ink)}
+  .cmdk-item .ci-meta{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .cmdk-item.active{background:rgba(187,34,53,.08)}
+  .cmdk-item.active .ci-title{color:var(--red-dk)}
+  .cmdk-empty{padding:24px 18px;text-align:center;color:var(--muted);font-size:13.5px}
   .plan-nav-link:hover{background:rgba(255,255,255,.05);color:#fff}
   .plan-nav-link.active{background:rgba(187,34,53,.14);color:#fff;border-left-color:var(--red)}
   .pnl-ico{font-size:14px}
@@ -267,12 +289,26 @@
 
 <div class="scrim" onclick="closeNav()"></div>
 
+<div class="cmdk-overlay" id="cmdkOverlay" onclick="if(event.target===this)closeSearch()">
+  <div class="cmdk-panel">
+    <div class="cmdk-input-wrap">
+      <span class="cmdk-ico">🔍</span>
+      <input type="text" id="cmdkInput" class="cmdk-input" placeholder="Konu ara... (ör. eloquent, git, nginx)" autocomplete="off">
+      <span class="cmdk-esc">esc</span>
+    </div>
+    <div class="cmdk-results" id="cmdkResults"></div>
+  </div>
+</div>
+
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <p class="brand-tag">Z3 Yazılım · Geliştirici Kılavuzu</p>
     <h1>Stajyer Yol Haritası</h1>
     <p>Sıfırdan üretime: PHP · Laravel · Homestead</p>
   </div>
+  <button class="search-trigger" onclick="openSearch()">
+    <span class="st-ico">🔍</span><span>Konu ara...</span><span class="st-kbd">Ctrl K</span>
+  </button>
   <div class="progress-wrap">
     <div class="progress-top">
       <span class="lbl">İlerleme</span>
