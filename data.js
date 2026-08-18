@@ -1604,6 +1604,115 @@ public function guncelle(Request $request, Rapor $rapor)
       ]
     },
     {
+      id: "2fa-mailtrap",
+      eyebrow: "Faz 6 · Profesyonelleşme",
+      title: "E-posta ile 2FA & Mailtrap",
+      why: "Projelerimizde girişi tek şifreyle bırakmıyoruz; e-postaya gelen bir kodla ikinci bir doğrulama istiyoruz. Geliştirirken bu e-postaları gerçek bir kutuya göndermek yerine Mailtrap'te yakalıyoruz — hem hızlı hem risksiz.",
+      body: `
+        <p><strong>2FA (iki adımlı doğrulama)</strong>, şifreyi doğru bilmek yetmesin, ikinci bir kanıt daha istensin diye vardır. Burada anlatacağımız yöntem: kullanıcı şifresini doğru girince hemen içeri almak yerine, e-postasına 6 haneli bir kod gönderiyoruz; kullanıcı o kodu girmeden oturum tamamlanmıyor.</p>
+        <h3>Mailtrap nedir, neden kullanıyoruz?</h3>
+        <p><strong>Mailtrap</strong>, gönderdiğin e-postaları gerçek kutulara düşürmeden yakalayan bir test servisidir. Geliştirirken "acaba yanlışlıkla gerçek bir kullanıcıya mail gitti mi?" diye düşünmene gerek kalmaz — her şey Mailtrap'in sana özel gelen kutusunda görünür, içeriğini, başlıklarını, HTML görünümünü oradan kontrol edersin.</p>
+        <h3>Kurulum</h3>
+        <p>Mailtrap'te ücretsiz bir hesap açıp bir <em>inbox</em> oluşturuyorsun; her inbox'ın kendine ait SMTP bilgileri olur (host, port, kullanıcı adı, şifre). Bunları projenin <code>.env</code>'ine yapıştırıyorsun — Laravel'in mail sistemi geri kalanını halleder.</p>
+        <h3>Akış</h3>
+        <ol style="padding-left:20px">
+          <li>Kullanıcı email + şifreyle giriş yapar (şifre doğrudur)</li>
+          <li>Oturumu hemen tamamlamak yerine 6 haneli bir kod üretip veritabanına (kısa süreliğine) kaydedersin</li>
+          <li>Kodu <code>Mailable</code> sınıfıyla kullanıcının e-postasına gönderirsin</li>
+          <li>Kullanıcı kodu bir formda girer; doğruysa ve süresi geçmemişse oturum tamamlanır</li>
+        </ol>
+        <p><strong>Not:</strong> Burada gösterilen basitleştirilmiş bir örnektir — gerçek bir üretim sisteminde kodu hash'lemek, deneme sayısını sınırlamak (rate limiting) gibi ek önlemler eklenir. Şimdilik akışı kavramak yeterli.</p>`,
+      code: [
+        { lang:"bash", fn:".env — Mailtrap SMTP", src:
+`MAIL_MAILER=smtp
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=mailtrap_kullanici_adin
+MAIL_PASSWORD=mailtrap_sifren
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=hello@example.com
+MAIL_FROM_NAME="\${APP_NAME}"` },
+        { lang:"bash", fn:"tinker'da test et", src:
+`php artisan tinker
+
+>>> Mail::raw('Mailtrap testi', function ($m) {
+...     $m->to('sen@example.com')->subject('Test');
+... });
+# Mailtrap'teki inbox'ını aç, e-postayı orada görmelisin` },
+        { lang:"php", fn:"migration — users tablosuna kod alanları", src:
+`Schema::table('users', function (Blueprint $table) {
+    $table->string('two_factor_code')->nullable();
+    $table->timestamp('two_factor_expires_at')->nullable();
+});` },
+        { lang:"php", fn:"app/Mail/LoginKoduMail.php", src:
+`<?php
+namespace App\\Mail;
+
+use Illuminate\\Mail\\Mailable;
+
+class LoginKoduMail extends Mailable
+{
+    public function __construct(public string $kod) {}
+
+    public function build()
+    {
+        return $this->subject('Giriş doğrulama kodun')
+            ->view('emails.login-kodu')
+            ->with(['kod' => $this->kod]);
+    }
+}` },
+        { lang:"php", fn:"AuthController — kod üret, gönder, doğrula", src:
+`<?php
+use App\\Mail\\LoginKoduMail;
+use Illuminate\\Support\\Facades\\Mail;
+
+// 1) şifre doğrulandıktan sonra
+public function kodGonder($user)
+{
+    $kod = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+    $user->update([
+        'two_factor_code'       => $kod,
+        'two_factor_expires_at' => now()->addMinutes(10),
+    ]);
+
+    Mail::to($user->email)->send(new LoginKoduMail($kod));
+
+    return redirect()->route('2fa.dogrula');
+}
+
+// 2) kullanıcı kodu girince
+public function kodDogrula(Request $request)
+{
+    $user = auth()->user();
+
+    if ($user->two_factor_code !== $request->kod) {
+        return back()->withErrors(['kod' => 'Kod yanlış.']);
+    }
+    if (now()->greaterThan($user->two_factor_expires_at)) {
+        return back()->withErrors(['kod' => 'Kodun süresi doldu, tekrar iste.']);
+    }
+
+    $user->update(['two_factor_code' => null, 'two_factor_expires_at' => null]);
+    session()->put('2fa_dogrulandi', true);
+
+    return redirect()->route('panel');
+}` }
+      ],
+      steps: [
+        "Mailtrap'te ücretsiz bir hesap aç, bir inbox oluştur.",
+        "Inbox'ın SMTP bilgilerini kopyala, projenin <code>.env</code>'ine yapıştır.",
+        "Tinker'da <code>Mail::raw(...)</code> ile test e-postası gönder, Mailtrap'te göründüğünü doğrula.",
+        "<code>php artisan make:mail LoginKoduMail</code> ile mail sınıfını oluştur, basit bir Blade view'i bağla.",
+        "Migration'la <code>users</code> tablosuna <code>two_factor_code</code> ve <code>two_factor_expires_at</code> ekle.",
+        "Giriş akışına kod üretme + gönderme + doğrulama adımlarını ekle; kendi projende dene."
+      ],
+      resources: [
+        { t:"Doküman", label:"Mailtrap — SMTP entegrasyonu", url:"https://docs.mailtrap.io/email-sandbox/setup/sandbox-smtp-integration" },
+        { t:"Doküman", label:"Laravel — Mail (Mailable sınıfları)", url:"https://laravel.com/docs/mail" }
+      ]
+    },
+    {
       id: "artisan",
       eyebrow: "Faz 6 · Profesyonelleşme",
       title: "Artisan komutları",
