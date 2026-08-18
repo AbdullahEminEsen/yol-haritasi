@@ -1683,3 +1683,25 @@ git push -u origin feature/yeni-is     # gönder → GitHub'da PR aç` }
   ]
 }
 ];
+
+/* =========================================================================
+   Staj süresi planlaması — "Staj Planı" sayfası bunu kullanır.
+   Konu sayısı değişirse (ROADMAP'e ekleme/çıkarma) haftalık dağılım
+   otomatik yeniden hesaplanır, burayı elle güncellemene gerek yok.
+   - weeks: stajın toplam hafta sayısı (5 iş günü = 1 hafta)
+   - projectWeeks: sondan kaç hafta bitirme projesine ayrılsın
+   ========================================================================= */
+const PLAN_DURATIONS = {
+  20: { label: "20 iş günü", weeks: 4, projectWeeks: 1,
+        note: "Kısa ve yoğun bir tempo. Bir haftada çok konu var — takıldığın yerde çok oyalanma, ilerlemeyi önceliklendir." },
+  30: { label: "30 iş günü", weeks: 6, projectWeeks: 1,
+        note: "Dengeli bir tempo; her hafta ortalama 6-7 konu." },
+  40: { label: "40 iş günü", weeks: 8, projectWeeks: 2,
+        note: "Rahat bir tempo. Proje için 2 hafta ayrıldı — daha kapsamlı bir şey deneyebilirsin." },
+};
+
+const FINAL_PROJECT = {
+  title: "Bitirme projesi",
+  desc: "Öğrendiğin her şeyi (routing, Eloquent, Form Request, Blade, CRUD) kullanarak kendi seçtiğin bir konuda uçtan uca bir uygulama yap — bir görev takip, basit bir blog, bir stok takibi... CRUD konusundaki örneği kopyalamak yerine kendi veri modelini kur.",
+  url: "https://tally.so/r/VLaRKE"
+};

@@ -19,6 +19,40 @@ function saveDone(set) {
 }
 let done = loadDone();
 
+/* ---- staj planı ---- */
+const PLAN_KEY = "z3_onboarding_plan_duration_v1";
+function loadPlanDuration() {
+  try { return localStorage.getItem(PLAN_KEY) || null; } catch { return null; }
+}
+function savePlanDuration(d) {
+  try { localStorage.setItem(PLAN_KEY, d); } catch (_) {}
+}
+let planDuration = loadPlanDuration();
+
+function setPlanDuration(d) {
+  planDuration = d;
+  savePlanDuration(d);
+  route();
+}
+
+// Konu sayısını içerik haftalarına olabildiğince eşit dağıtır.
+// Kalan sayı varsa (ör. 33/5=6 kalan 3) ilk haftalara birer fazla verir.
+function buildSchedule(durationKey) {
+  const cfg = PLAN_DURATIONS[durationKey];
+  if (!cfg) return null;
+  const contentWeeks = cfg.weeks - cfg.projectWeeks;
+  const base = Math.floor(TOTAL / contentWeeks);
+  const extra = TOTAL % contentWeeks;
+  const weeks = [];
+  let idx = 0;
+  for (let w = 0; w < contentWeeks; w++) {
+    const count = base + (w < extra ? 1 : 0);
+    weeks.push({ weekNum: w + 1, topics: FLAT.slice(idx, idx + count) });
+    idx += count;
+  }
+  return { cfg, weeks, contentWeeks };
+}
+
 /* ---- HTML kaçış + basit sözdizimi renklendirme ---- */
 function esc(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -105,7 +139,11 @@ function copyCode(btn) {
 /* ---- navigasyonu kur ---- */
 function buildNav() {
   const nav = document.getElementById("nav");
-  nav.innerHTML = ROADMAP.map(phase => {
+  const planLink = `
+    <a class="plan-nav-link" href="#plan" data-id="plan">
+      <span class="pnl-ico">📅</span><span>Staj Planı</span>
+    </a>`;
+  const phases = ROADMAP.map(phase => {
     const topics = phase.topics.map(t => `
       <a class="topic" href="#${t.id}" data-id="${t.id}">
         <span class="dot"></span>
@@ -117,6 +155,7 @@ function buildNav() {
         ${topics}
       </div>`;
   }).join("");
+  nav.innerHTML = planLink + phases;
 }
 
 /* ---- ilerleme göstergelerini güncelle ---- */
@@ -198,11 +237,71 @@ function renderHero() {
     </div>
 
     <div class="hero-cta">${btn}</div>
+    <a class="hero-plan-link" href="#plan">📅 Staj süren belli mi? Haftalık planını oluştur →</a>
 
     <p style="margin-top:34px;color:var(--muted);font-size:13px;font-family:var(--mono)">
       Takıldığında sormaktan çekinme. Bir şeyi bilmemek ayıp değil; iki gün tek başına savaşmak öyle.
     </p>
   </div>`;
+}
+
+/* ---- staj planı sayfası ---- */
+function renderPlan() {
+  const durations = Object.keys(PLAN_DURATIONS);
+  const active = planDuration && PLAN_DURATIONS[planDuration] ? planDuration : null;
+
+  const picker = `
+    <div class="plan-picker">
+      ${durations.map(d => `
+        <button class="plan-chip ${active === d ? "active" : ""}" onclick="setPlanDuration('${d}')">
+          ${PLAN_DURATIONS[d].label}
+        </button>`).join("")}
+    </div>`;
+
+  if (!active) {
+    return `
+      <div class="eyebrow">Staj Planı</div>
+      <h2 class="title">Ne kadar sürede bitireceksin?</h2>
+      <p class="hero-lead">Staj süren kaç iş günü? Seçtiğine göre sana haftalık bir program çıkaralım — hangi hafta hangi konuları bitirmiş olman gerektiğini gösterir.</p>
+      ${picker}`;
+  }
+
+  const sch = buildSchedule(active);
+  const weekRows = sch.weeks.map(w => {
+    const items = w.topics.map(t => `
+      <a class="plan-topic ${done.has(t.id) ? "done" : ""}" href="#${t.id}">
+        <span class="pt-dot"></span><span>${t.title}</span>
+      </a>`).join("");
+    return `
+      <div class="plan-week">
+        <div class="pw-head"><span class="pw-num">${w.weekNum}. hafta</span><span class="pw-count">${w.topics.length} konu</span></div>
+        <div class="pw-topics">${items}</div>
+      </div>`;
+  }).join("");
+
+  const projectLabel = sch.cfg.projectWeeks > 1
+    ? `${sch.contentWeeks + 1}–${sch.cfg.weeks}. haftalar`
+    : `${sch.cfg.weeks}. hafta`;
+
+  return `
+    <div class="eyebrow">Staj Planı</div>
+    <h2 class="title">${PLAN_DURATIONS[active].label} için program</h2>
+    <p class="hero-lead">${PLAN_DURATIONS[active].note}</p>
+    ${picker}
+    <div class="sec-lbl">Haftalık program</div>
+    ${weekRows}
+    <div class="sec-lbl">Proje</div>
+    <div class="checkpoint">
+      <div class="cp-head">
+        <span class="cp-tag">${projectLabel}</span>
+        <span class="cp-opt">bitirme projesi</span>
+      </div>
+      <div class="cp-body">
+        <b>${FINAL_PROJECT.title}</b>
+        <p>${FINAL_PROJECT.desc}</p>
+      </div>
+      <a class="cp-btn" href="${FINAL_PROJECT.url}" target="_blank" rel="noopener">Projemi paylaş →</a>
+    </div>`;
 }
 
 /* ---- bir konuyu render et ---- */
@@ -282,15 +381,15 @@ function renderTopic(t, index) {
 function route() {
   const id = location.hash.replace(/^#/, "");
   const content = document.getElementById("content");
-  const idx = FLAT.findIndex(t => t.id === id);
 
-  if (idx === -1) {
-    content.innerHTML = renderHero();
+  if (id === "plan") {
+    content.innerHTML = renderPlan();
   } else {
-    content.innerHTML = renderTopic(FLAT[idx], idx);
+    const idx = FLAT.findIndex(t => t.id === id);
+    content.innerHTML = idx === -1 ? renderHero() : renderTopic(FLAT[idx], idx);
   }
 
-  document.querySelectorAll(".topic").forEach(a =>
+  document.querySelectorAll(".topic, .plan-nav-link").forEach(a =>
     a.classList.toggle("active", a.dataset.id === id));
   refreshProgress();
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
