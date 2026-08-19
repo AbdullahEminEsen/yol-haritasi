@@ -389,19 +389,22 @@ vagrant halt` }
       title: "Laravel Homestead kurulumu",
       why: "Bizim standart geliştirme ortamımız bu. İlk günlerinde en çok uğraşacağın konu — bir kez düzgün kurunca aylarca sorunsuz çalışır. Takılırsan çekinme, sor.",
       body: `
-        <p><strong>Homestead</strong>, PHP, MySQL, nginx, Redis ve daha fazlasını hazır içeren resmi bir Vagrant box'udur. Biz repoyu klonlayıp uğraşmak yerine, box'ı doğrudan projeye <strong>pinleyip</strong> başlatıyoruz — daha hızlı, ve sürüm herkeste sabit kalıyor.</p>
+        <p><strong>Homestead</strong>, PHP, MySQL, nginx, Redis ve daha fazlasını hazır içeren resmi bir Vagrant box'udur. Biz repoyu klonlayıp uğraşmak yerine, box'ı doğrudan pinleyip başlatıyoruz — daha hızlı, ve sürüm herkeste sabit kalıyor.</p>
+        <h3>Tek kutu, birden fazla proje</h3>
+        <p><strong>Bu kurulumu proje başına değil, bir kere yaparsın.</strong> <code>vagrant init</code>'i tüm projelerinin duracağı üst klasörde (<code>~/code</code> gibi) çalıştırırsın; sonra her yeni projeni bunun altına bir alt klasör olarak açarsın (<code>~/code/blog</code>, <code>~/code/baska-proje</code> gibi). Aynı makine hepsine birden hizmet eder — her proje için ayrı bir kutu açmazsın (ayrı kutular aynı anda aynı host portunu kullanmaya çalışır ve çakışır).</p>
         <h3>Kurulum mantığı</h3>
         <ol style="padding-left:20px">
-          <li>Projenin duracağı klasöre girersin</li>
-          <li><code>vagrant init laravel/homestead --box-version 14.0.2</code> ile o klasöre bir <code>Vagrantfile</code> oluşturursun</li>
+          <li><code>~/code</code> klasörüne girersin (yoksa oluşturursun)</li>
+          <li><code>vagrant init laravel/homestead --box-version 14.0.2</code> ile buraya bir <code>Vagrantfile</code> oluşturursun</li>
           <li><code>vagrant up</code> dersin; box yoksa önce iner, sonra makine ayağa kalkar</li>
           <li><code>vagrant ssh</code> ile içine girip çalışırsın</li>
         </ol>
+        <p>Vagrant, varsayılan olarak <code>Vagrantfile</code>'ın bulunduğu klasörü (<code>~/code</code>) makinenin içinde <code>/vagrant</code> olarak senkronize eder. Yani <code>~/code/blog</code>'a attığın bir dosya, makine içinde anında <code>/vagrant/blog</code>'da görünür — ayrıca bir eşleme ayarlamana gerek yok.</p>
         <p><strong>Neden sürümü pinliyoruz?</strong> <code>--box-version</code> vermezsen Vagrant bazen mimariyi <em>"unknown"</em> görüp yanlış ya da beklediğinden eski bir box çekebiliyor. Sürümü (<code>14.0.2</code>) sabitlemek, ekipteki herkeste birebir aynı ortamı garantiler.</p>`,
       code: [
-        { lang:"bash", fn:"homestead kurulum", src:
-`# Projenin duracağı klasöre gir (yoksa oluştur)
-cd ~/code/blog
+        { lang:"bash", fn:"homestead kurulum (bir kere)", src:
+`# Tüm projelerinin duracağı üst klasöre gir (yoksa oluştur)
+mkdir -p ~/code && cd ~/code
 
 # Homestead box'ını 14.0.2'ye pinleyerek Vagrantfile üret
 vagrant init laravel/homestead --box-version 14.0.2
@@ -411,14 +414,22 @@ vagrant up
 
 # Makinenin içine gir ve PHP'nin hazır olduğunu doğrula
 vagrant ssh
-php -v` }
+php -v` },
+        { lang:"bash", fn:"yeni bir proje eklemek (her seferinde)", src:
+`# Kutuyu tekrar kurmana gerek yok — sadece alt klasör aç
+mkdir ~/code/blog
+# projeni buraya klonla / composer create-project ile kur
+
+# makine içinde otomatik olarak şurada görünür:
+# /vagrant/blog` }
       ],
       steps: [
         "VirtualBox ve Vagrant'ın kurulu olduğundan emin ol (önceki konu).",
-        "Projenin duracağı klasöre gir: <code>cd ~/code/blog</code>.",
+        "Tüm projelerinin duracağı üst klasöre gir: <code>mkdir -p ~/code && cd ~/code</code>.",
         "<code>vagrant init laravel/homestead --box-version 14.0.2</code> çalıştır; klasörde bir <code>Vagrantfile</code> oluştuğunu gör.",
         "<code>vagrant up</code> ile makineyi ayağa kaldır (box ilk sefer indirilir, sabret).",
-        "<code>vagrant ssh</code> ile bağlan ve <code>php -v</code> ile ortamın hazır olduğunu doğrula."
+        "<code>vagrant ssh</code> ile bağlan ve <code>php -v</code> ile ortamın hazır olduğunu doğrula.",
+        "Yeni bir projeye başlayacağın zaman, kutuyu tekrar kurmadan sadece <code>~/code</code> altına bir alt klasör aç."
       ],
       resources: [
         { t:"Doküman", label:"Laravel Homestead — resmi kurulum rehberi", url:"https://laravel.com/docs/homestead" },
@@ -575,6 +586,7 @@ ls /run/php/php8.5-fpm.sock` }
         <p>Bizde <code>Homestead.yaml</code> <strong>kullanmıyoruz</strong>. Box'ı başlattıktan sonra site'ı iki adımda tanıtıyoruz: makine içinde nginx'i elle ayarlıyoruz, bilgisayarında da <code>hosts</code> dosyasına bir satır ekliyoruz.</p>
         <h3>1. Makine içinde: nginx sites-enabled</h3>
         <p><code>vagrant ssh</code> ile makineye girip <code>/etc/nginx/sites-enabled/</code> altındaki server bloğunu düzenlersin (ya da yeni bir tane oluşturursun). İki kritik satır var: <code>server_name</code> — hangi alan adına cevap vereceği; ve <code>root</code> — projenin <code>public</code> klasörü.</p>
+        <p><strong>Yol nereden geliyor?</strong> Homestead kurulumunda <code>vagrant init</code>'i <code>~/code</code>'da çalıştırmıştık; Vagrant bu klasörü otomatik olarak makine içinde <code>/vagrant</code>'a bağlar. Yani bilgisayarındaki <code>~/code/blog</code>, makine içinde <code>/vagrant/blog</code>'dur — <code>root</code> da bu yüzden <code>/vagrant/blog/public</code> olur.</p>
         <h3>2. Bilgisayarında: hosts dosyası</h3>
         <p>Tarayıcının bu alan adını makineye yönlendirmesi için host makinenin <code>hosts</code> dosyasına bir satır eklersin. Biz <code>xip.io</code> biçiminde adlar kullanıyoruz: <code>blog.127.0.0.1.xip.io</code> gibi. Bu isimlendirme, alt-alan adı konforu sağlayan eski bir kalıptır; <code>hosts</code>'a sabitlediğimiz için de dış bir servise ihtiyaç kalmaz, isim doğrudan <code>127.0.0.1</code>'e çözülür.</p>
         <p><strong>Değişiklikten sonra:</strong> nginx config'ini her düzenlediğinde makine içinde önce <code>sudo nginx -t</code> ile doğrula (hata varsa satırını söyler), sonra <code>sudo systemctl reload nginx</code> ile yeniden yükle. Aksi halde nginx eski hâliyle çalışmaya devam eder.</p>`,
@@ -589,7 +601,7 @@ sudo nano /etc/nginx/sites-enabled/blog` },
 `server {
     listen 80;
     server_name blog.127.0.0.1.xip.io;
-    root /home/vagrant/code/blog/public;   # projenin public'i
+    root /vagrant/blog/public;   # ~/code/blog -> /vagrant/blog (Vagrant'ın varsayılan senkronu)
 
     index index.php index.html;
 
